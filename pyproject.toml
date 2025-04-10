@@ -1,0 +1,61 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "coherent-cube"
+dynamic = ["version"]
+description = ''
+readme = "README.md"
+requires-python = ">=3.8"
+license = "MIT"
+keywords = ["coherent", "cube", "laser", "controller"]
+authors = [
+  { name = "Brian Carlsen", email = "carlsen.bri@gmail.com" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = ["pyserial"]
+
+[project.urls]
+Documentation = "https://github.com/bicarlsen/coherent-cube#readme"
+Issues = "https://github.com/bicarlsen/coherent-cube/issues"
+Source = "https://github.com/bicarlsen/coherent-cube"
+
+[tool.hatch.version]
+path = "src/coherent_cube/__about__.py"
+
+[tool.hatch.envs.types]
+extra-dependencies = [
+  "mypy>=1.0.0",
+]
+[tool.hatch.envs.types.scripts]
+check = "mypy --install-types --non-interactive {args:src/coherent_cube tests}"
+
+[tool.coverage.run]
+source_pkgs = ["coherent_cube", "tests"]
+branch = true
+parallel = true
+omit = [
+  "src/coherent_cube/__about__.py",
+]
+
+[tool.coverage.paths]
+coherent_cube = ["src/coherent_cube", "*/coherent-cube/src/coherent_cube"]
+tests = ["tests", "*/coherent-cube/tests"]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
