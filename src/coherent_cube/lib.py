@@ -137,11 +137,32 @@ class CoherentCube:
         self.write(cmd)
         if clear_buffer:
             self.read()
+
+    def clear_intro(self):
+        """Clear laser intro message.
+
+        When turned on, the laser sends a message of (text in angle brackets <...> are not actually sent, but eplanatory.)
+        ```
+        Coherent, Inc.
+        (C) 2006
+        Cube
+        v3.0.5 <firmware version>
+        <empty line>
+        ```
+        This reads messages until the blank line is reached.
+        """
+        line = self.read()
+        while len(line) > 0:
+            line.read()
         
     def on(self):
         """Turn the laser on.
         """
-        self.set("L", "1")
+        self.set("L", "1", clear_buffer=False)
+        resp = self.parse_response("L", self.read())
+        if int(resp) == 0:
+            cause = self.read()
+            warnings.warn(f"Can not turn laser on due to {cause}.")
         
     def off(self):
         """Turn the laser off.
