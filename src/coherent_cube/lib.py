@@ -25,7 +25,8 @@ class AnalogControl(Enum):
 class CoherentCube:
     BAUDRATE = 19200
     CMD_ENDING = b"\r\n"
-    
+    CMD_PROMPT_QUERY_ATTEMPTS = 10
+
     def __init__(self, port: str, timeout: Optional[int] = None, write_timeout: Optional[int] = None):
         """Create a new Coherent Cube laser controller.
 
@@ -34,8 +35,12 @@ class CoherentCube:
             timeout (Optional[int], optional): Read timeout in seconds. Defaults to None.
             write_timeout (Optional[int], optional): Write timeout in seconds. Defaults to None. 
         """
+        self._cmd_prompt = self._query_command_prompt(port)
         self.__ser = serial.Serial(port, baudrate=self.BAUDRATE, timeout=timeout, write_timeout=write_timeout)
-        
+        if self._cmd_prompt:
+            self.set(">", "0")
+            self.read() # read extra new line when cmd prompt is active
+
         try:
             self._max_power = float(self.query("MAXLP")) # max laser power in mW
             self._min_power = float(self.query("MINLP")) # min laser power in mW
@@ -44,9 +49,11 @@ class CoherentCube:
             self.__ser.close()
             raise err
 
-
     def __del__(self):
         if self.__ser.is_open:
+            if self._cmd_prompt:
+                self.set(">", "1")
+
             self.__ser.close()
 
     def __enter__(self):
@@ -55,6 +62,38 @@ class CoherentCube:
     def __exit__(self, exc_type, exc_value, traceback):
         if self.__ser.is_open:
             self.__ser.close()
+
+    def _query_command_prompt(self, port: str) -> bool:
+        """Query if the command prompt is enabled.
+
+        Args:
+            port (str): _description_
+
+        Raises:
+            err: _description_
+
+        Returns:
+            bool: _description_
+        """
+        ser = serial.Serial(port, baudrate=self.BAUDRATE, timeout=5, write_timeout=5)
+        cmd_resp = b">="
+        try:
+            ser.write("?>".encode() + self.CMD_ENDING)
+            resp = ser.read_until(self.CMD_ENDING)
+            attempt = 1
+            while not resp.startswith(cmd_resp) and attempt < self.CMD_PROMPT_QUERY_ATTEMPTS:
+                resp = ser.read_until(self.CMD_ENDING)
+                attempt += 1
+            
+            resp = resp.lstrip(cmd_resp).rstrip(self.CMD_ENDING)
+            cmd_prompt = bool(int(resp.decode()))
+        except Exception as err:
+            ser.close()
+            raise err
+        finally:
+            ser.close()
+
+        return cmd_prompt
 
     def open(self):
         self.__ser.open()
@@ -80,7 +119,7 @@ class CoherentCube:
         """Read data from the device.
 
         Returns:
-            str: Read data. `\r\n` line ending is stripped.
+            str: Read data. `\\r\\n` line ending is stripped.
         """
         data = self.__ser.read_until(self.CMD_ENDING)
         logger.info(f"recieved {data}")
@@ -251,10 +290,10 @@ class CoherentCube:
     
     @property
     def power(self) -> float:
-        """Present laser power.
+        """Present laser power set point.
 
         Returns:
-            float: Laser power.
+            float: Laser power in mW.
         """
         return float(self.query("SP"))
 
@@ -263,7 +302,7 @@ class CoherentCube:
         """Set the laser's output power.
 
         Args:
-            power (float): Desired power.
+            power (float): Desired power in mW.
         """
         self.validate_power(power)
         self.set("P", str(power))
