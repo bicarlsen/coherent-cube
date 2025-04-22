@@ -307,6 +307,17 @@ class CoherentCube:
         self.validate_power(power)
         self.set("P", str(power))
 
+    @property
+    def operation_mode(self) -> OperationMode:
+        """Query the present operation mode.
+
+        Returns:
+            OperationMode: Present operation mode.
+        """
+        mode = int(self.query("CW"))
+        return OperationMode(mode)
+
+    @operation_mode.setter
     def operation_mode(self, mode: OperationMode):
         """Set the operating mode of the laser.
 
