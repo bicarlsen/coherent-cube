@@ -125,6 +125,13 @@ class CoherentCube:
         logger.info(f"recieved {data}")
         return data.rstrip(self.CMD_ENDING).decode()
     
+    def clear_buffer(self):
+        """Read buffer until first empty response.
+        """
+        resp = self.read()
+        while len(resp) > 0:
+            resp = self.read()
+    
     def parse_response(self, cmd: str, response: str) -> str:
         """Parse a  response.
         For a command `X` or query `?X` most responses have the form `X=<value>`,
