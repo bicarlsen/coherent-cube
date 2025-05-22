@@ -107,12 +107,12 @@ class CoherentCube:
         Args:
             data (str): Data to write. `\r\n` line ending is appended if it is not provided.
         """
-        data = data.encode()
-        if not data.endswith(self.CMD_ENDING):
-            data += self.CMD_ENDING
+        data_b = data.encode()
+        if not data_b.endswith(self.CMD_ENDING):
+            data_b += self.CMD_ENDING
             
         logger.info(f"writing {data}")
-        n_out = self.__ser.write(data)
+        n_out = self.__ser.write(data_b)
         logger.debug(f"wrote {n_out} bytes")
 
     def read(self) -> str:
@@ -199,7 +199,7 @@ class CoherentCube:
         """
         line = self.read()
         while len(line) > 0:
-            line.read()
+            line = self.read()
         
     def on(self):
         """Turn the laser on.
@@ -213,7 +213,7 @@ class CoherentCube:
     def off(self):
         """Turn the laser off.
         """
-        self.set("L", 0)
+        self.set("L","0")
 
     def cdrh(self, enable: bool = True):
         """Set the CDR 5 second laser on delay.
